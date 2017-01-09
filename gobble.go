@@ -10,6 +10,7 @@ import (
 	"io"
 	"strings"
 	"time"
+	"github.com/labstack/echo/middleware"
 )
 
 func main() {
@@ -17,8 +18,7 @@ func main() {
 	e := echo.New()
 
 	// Middleware
-	//e.Use(middleware.Logger())
-	//e.Use(middleware.Recover())
+	e.Use(middleware.Recover())
 
 	// Route => handler
 	e.GET("/", func(c echo.Context) error {
