@@ -30,9 +30,22 @@ func main() {
 }
 
 func handlePostPayload(c echo.Context) error {
-
 	t := time.Now()
-	fo, err := os.Create(t.Format("2006-01-02 15.04.05"))
+	dir := c.QueryParam("dir")
+	if dir != "" {
+		err := os.MkdirAll(dir, 0644)
+		if err != nil {
+			panic("unable to create dir")
+		}
+	} else {
+		dir = t.Format("2006-01-02")
+		err := os.MkdirAll(dir, 0644)
+		if err != nil {
+			panic("unable to create dir")
+		}
+	}
+
+	fo, err := os.Create("./" + dir + "/" + t.Format("15.04.05.0000"))
 	if err != nil {
 		panic(err)
 	}
