@@ -22,7 +22,7 @@ func main() {
 	t := &Template{
 		templates: template.Must(template.New("index").Parse(`{{define "index"}}
 		{{range .Files}}
-		<a href="{{$.Path}}/{{.Name}}">{{.Name}}</a>
+		<a href="{{$.Path}}/{{.Name}}">{{.Name}}</a><br/>
 		{{end}}
 		{{end}}`)),
 	}
