@@ -96,5 +96,5 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(writer)
 	//Write request body to file
 	io.Copy(writer, r.Body)
-	w.Write([]byte(t.Format("2006-01-02 15:04:05")))
+	w.Write([]byte(fo.Name()[1:]))
 }
