@@ -1,54 +1,71 @@
 package main
 
 import (
+	"github.com/pressly/chi"
 	"net/http"
-
-	"github.com/labstack/echo"
-	"fmt"
 	"os"
 	"bufio"
-	"io"
+	"fmt"
 	"strings"
+	"io"
 	"time"
-	"github.com/labstack/echo/middleware"
 	"html/template"
 	"io/ioutil"
 )
 
 func main() {
-	// Echo instance
-	e := echo.New()
+	r := chi.NewRouter()
+	r.Get("/*", showFiles)
+	r.Post("/", handlePost)
+	http.ListenAndServe(":80", r)
+}
 
-	t := &Template{
-		templates: template.Must(template.New("index").Parse(`{{define "index"}}
+func showFiles(w http.ResponseWriter, r *http.Request) {
+
+	t := template.Must(template.New("index").Parse(`{{define "index"}}
 		{{range .Files}}
 		<a href="{{$.Path}}/{{.Name}}">{{.Name}}</a><br/>
 		{{end}}
-		{{end}}`)),
+		{{end}}`))
+
+	path := chi.URLParam(r, "*")
+
+	if info, err := os.Stat("./" + path); err == nil {
+		if info.IsDir() {
+			files, err := ioutil.ReadDir("./" + path)
+			if err != nil {
+				panic("Unable to read directory")
+			}
+
+			templData := struct {
+				Path  string
+				Files []os.FileInfo
+			}{
+				info.Name(),
+				files,
+			}
+
+			t.Execute(w, templData)
+		} else {
+			f, _ := ioutil.ReadFile(path)
+			w.Write(f)
+		}
+	} else {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
-	e.Renderer = t
-
-	// Middleware
-	e.Use(middleware.Recover())
-
-	// Route => handler
-	e.GET("/*", handleGet)
-
-	e.POST("/", handlePostPayload)
-
-	// Start server
-	e.Logger.Fatal(e.Start(":1323"))
 }
 
-func handlePostPayload(c echo.Context) error {
+func handlePost(w http.ResponseWriter, r *http.Request) {
 	t := time.Now()
-	dir := c.QueryParam("dir")
+	dir := r.URL.Query().Get("dir")
 	if dir != "" {
+		//Make sure the requested directory is around
 		err := os.MkdirAll(dir, 0644)
 		if err != nil {
 			panic("unable to create dir")
 		}
 	} else {
+		//No directory requested so we give them the default
 		dir = t.Format("2006-01-02")
 		err := os.MkdirAll(dir, 0644)
 		if err != nil {
@@ -56,6 +73,7 @@ func handlePostPayload(c echo.Context) error {
 		}
 	}
 
+	//Create file which is named after the create time
 	fo, err := os.Create("./" + dir + "/" + t.Format("15.04.05.0000"))
 	if err != nil {
 		panic(err)
@@ -67,50 +85,16 @@ func handlePostPayload(c echo.Context) error {
 		}
 	}()
 
-	w := bufio.NewWriter(fo)
-	defer w.Flush()
+	writer := bufio.NewWriter(fo)
+	defer writer.Flush()
 
-	for k, v := range c.Request().Header {
-		fmt.Fprintln(w, k + ":", strings.Join(v, ","))
+	//Write headers to file
+	for k, v := range r.Header {
+		fmt.Fprintln(writer, k + ":", strings.Join(v, ","))
 	}
 
-	fmt.Fprintln(w)
-	io.Copy(w, c.Request().Body)
-
-	return c.String(http.StatusOK, t.Format("2006-01-02 15:04:05"))
-}
-
-type Template struct {
-	templates *template.Template
-}
-
-func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
-
-func handleGet(c echo.Context) error {
-	path := c.Param("*")
-
-	if info, err := os.Stat("./" + path); err == nil {
-		if info.IsDir() {
-			files, err := ioutil.ReadDir("./" + path)
-			if err != nil {
-				panic("Unable to read directory")
-			}
-
-			templData := struct {
-				Path string
-				Files []os.FileInfo
-			}{
-				info.Name(),
-				files,
-			}
-
-			return c.Render(http.StatusOK, "index", templData)
-		} else {
-			return c.File(path)
-		}
-	}
-
-	return c.NoContent(http.StatusNotFound)
+	fmt.Fprintln(writer)
+	//Write request body to file
+	io.Copy(writer, r.Body)
+	w.Write([]byte(t.Format("2006-01-02 15:04:05")))
 }
