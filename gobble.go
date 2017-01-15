@@ -11,13 +11,18 @@ import (
 	"time"
 	"html/template"
 	"io/ioutil"
+	"flag"
 )
 
 func main() {
 	r := chi.NewRouter()
 	r.Get("/*", showFiles)
 	r.Post("/", handlePost)
-	http.ListenAndServe(":80", r)
+
+	port := flag.String("port", "80", "The port gobble will listen for connections on")
+
+	flag.Parse()
+	http.ListenAndServe(":" + *port, r)
 }
 
 func showFiles(w http.ResponseWriter, r *http.Request) {
