@@ -20,8 +20,8 @@ func main() {
 	r.Get("/*", showFiles)
 	r.Post("/", handlePost)
 
-	port := flag.String("port", "80", "The port gobble will listen for connections on")
-	homeDir := flag.String("dir", "public", "The directory all of the requests get stored in. Default is 'public'")
+	port := flag.String("port", "80", "Specifies the port to listen for incoming connections")
+	homeDir := flag.String("dir", "public", "Specifies the root directory which all directories and requests will be stored under")
 	flag.Parse()
 
 	err := os.MkdirAll(*homeDir, 0644)
