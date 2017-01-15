@@ -16,12 +16,20 @@ import (
 
 func main() {
 	r := chi.NewRouter()
+	r.Get("/", showFiles)
 	r.Get("/*", showFiles)
 	r.Post("/", handlePost)
 
 	port := flag.String("port", "80", "The port gobble will listen for connections on")
-
+	homeDir := flag.String("dir", "public", "The directory all of the requests get stored in. Default is 'public'")
 	flag.Parse()
+
+	err := os.MkdirAll(*homeDir, 0644)
+	if err != nil {
+		panic("unable to create dir")
+	}
+	os.Chdir(*homeDir)
+
 	http.ListenAndServe(":" + *port, r)
 }
 
