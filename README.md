@@ -29,3 +29,9 @@ There are several command line arguments available when running gobble:
   -port string
       	Specifies the port to listen for incoming connections (default "80")
 ```
+
+####Dependencies
+Gobble only depends on a single library named chi. You can retrieve this by using the go get tool.
+ ```text
+go get github.com/pressly/chi
+```
