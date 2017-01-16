@@ -1,0 +1,3 @@
+[submodule "vendor/github.com/pressly/chi"]
+	path = vendor/github.com/pressly/chi
+	url = git@github.com:pressly/chi.git
