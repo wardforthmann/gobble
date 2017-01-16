@@ -21,6 +21,10 @@ func main() {
 	r.Post("/", handlePost)
 
 	port := flag.String("port", "80", "Specifies the port to listen for incoming connections")
+	tlsPort := flag.String("tlsPort", "443", "Specifies the port to listen for incoming secure connections")
+	tlsCert := flag.String("tlsCert", "cert.pem", "Specifies the port to listen for incoming secure connections")
+	tlsKey := flag.String("tlsKey", "key.pem", "Specifies the port to listen for incoming secure connections")
+
 	homeDir := flag.String("dir", "public", "Specifies the root directory which all directories and requests will be stored under")
 	flag.Parse()
 
@@ -29,6 +33,10 @@ func main() {
 		panic("unable to create dir")
 	}
 	os.Chdir(*homeDir)
+
+	//This will fail silently if the key and cert cant be loaded
+	//We should inform the user if this occurs
+	go http.ListenAndServeTLS(":" + *tlsPort, *tlsCert, *tlsKey, r)
 
 	http.ListenAndServe(":" + *port, r)
 }
