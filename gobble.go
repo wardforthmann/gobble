@@ -13,13 +13,15 @@ import (
 	"io/ioutil"
 	"flag"
 	"log"
+	"strconv"
 )
 
 func main() {
 	r := chi.NewRouter()
+
 	r.Get("/", showFiles)
 	r.Get("/*", showFiles)
-	r.Post("/", handlePost)
+	r.With(statusCodeHandler).Post("/", handlePost)
 
 	port := flag.String("port", "80", "Specifies the port to listen for incoming connections")
 	useTls := flag.Bool("tls", false, "Tells gobble to listen for secure connections (ie. https)")
@@ -124,4 +126,18 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	//Write request body to file
 	io.Copy(writer, r.Body)
 	w.Write([]byte(fo.Name()[1:]))
+}
+
+func statusCodeHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("status_code") != "" {
+			status, err := strconv.Atoi(r.URL.Query().Get("status_code"))
+			if err == nil {
+				w.WriteHeader(status)
+			} else {
+				log.Println("Invalid number in status_code field")
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }

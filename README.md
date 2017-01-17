@@ -13,9 +13,14 @@ The current functionality is pretty simple. Simply POST any message to root of t
 ####Submitting requests
  Point your POST request at the root of the gobble server. The request will have its headers and body written to disk 
  under the specified home directory. To ease navigation, the request will be written to a sub directory corresponding
- to the date that the request was received. You may provide a query parameter named "dir" to override this with a name
- of your choosing. Gobble will return a string with the path that your request was stored at. You can use this to retrieve
- your request at a later date.
+ to the date that the request was received. Gobble will return a string with the path that your request was stored at.
+ You can use this to retrieve your request at a later date. There are also several query parameters you may use to override
+ some of the default behavior.
+ 
+ | Query Parameter | Description |
+ |:---------------:|:-----------|
+ |dir              | Override the name of the directory your request is written to. This can be used to group requests in a single location
+ |status_code      | Force the http status code on the response. Useful for testing error conditions
  
 ####Retrieving requests
  To view stored POST requests navigate a web browser to the location the gobble server is running. It will display a list
