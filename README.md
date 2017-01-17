@@ -1,10 +1,14 @@
 # gobble
-gobble is a tool intended to help test any application
- that makes http POST requests.
+Gobble is a tool intended to help test any application that makes http POST requests. It will help you see exactly what
+ is being POSTed to make sure it is correct and can help reduce the amount of time spent debugging failing requests.
+ There are several applications that already do this around the web but they leave your request data publicly accessible.
+ Gobble is self hosted which means your data stays safe inside your own network in situations where you don't want to
+ share it with the world.
+ 
  
 ###Usage
 The current functionality is pretty simple. Simply POST any message to root of the gobble server. It will take your
- request and store it to disk. 
+ request and store it to disk. You can then look up this request by navigating to its location on the gobble server.
  
 ####Submitting requests
  Point your POST request at the root of the gobble server. The request will have its headers and body written to disk 
@@ -25,9 +29,16 @@ There are several command line arguments available when running gobble:
  ```text
   -dir string
     	Specifies the root directory which all directories and requests will be stored under (default "public")
-    
   -port string
-      	Specifies the port to listen for incoming connections (default "80")
+    	Specifies the port to listen for incoming connections (default "80")
+  -tls
+    	Tells gobble to listen for secure connections (ie. https)
+  -tlsCert string
+    	Specifies the path to the x509 certificate (default "cert.pem")
+  -tlsKey string
+    	Specifies the path to the private key corresponding to the x509 certificate (default "key.pem")
+  -tlsPort string
+    	Specifies the port to listen for incoming secure connections (default "443")
 ```
 
 ####Dependencies
