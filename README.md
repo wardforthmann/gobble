@@ -17,10 +17,10 @@ The current functionality is pretty simple. Simply POST any message to root of t
  You can use this to retrieve your request at a later date. There are also several query parameters you may use to override
  some of the default behavior.
  
- | Query Parameter | Description |
- |:---------------:|:-----------|
- |dir              | Override the name of the directory your request is written to. This can be used to group requests in a single location
- |status_code      | Force the http status code on the response. Useful for testing error conditions
+ Query Parameter | Description 
+ :--------------:|:-----------
+ dir             | Override the name of the directory your request is written to. This can be used to group requests in a single location
+ status_code     | Force the http status code on the response. Useful for testing error conditions
  
 ####Retrieving requests
  To view stored POST requests navigate a web browser to the location the gobble server is running. It will display a list
