@@ -12,6 +12,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"flag"
+	"log"
 )
 
 func main() {
@@ -21,9 +22,10 @@ func main() {
 	r.Post("/", handlePost)
 
 	port := flag.String("port", "80", "Specifies the port to listen for incoming connections")
+	useTls := flag.Bool("tls", false, "Tells gobble to listen for secure connections (ie. https)")
 	tlsPort := flag.String("tlsPort", "443", "Specifies the port to listen for incoming secure connections")
-	tlsCert := flag.String("tlsCert", "cert.pem", "Specifies the port to listen for incoming secure connections")
-	tlsKey := flag.String("tlsKey", "key.pem", "Specifies the port to listen for incoming secure connections")
+	tlsCert := flag.String("tlsCert", "cert.pem", "Specifies the path to the x509 certificate")
+	tlsKey := flag.String("tlsKey", "key.pem", "Specifies the path to the private key corresponding to the x509 certificate")
 
 	homeDir := flag.String("dir", "public", "Specifies the root directory which all directories and requests will be stored under")
 	flag.Parse()
@@ -34,11 +36,15 @@ func main() {
 	}
 	os.Chdir(*homeDir)
 
-	//This will fail silently if the key and cert cant be loaded
-	//We should inform the user if this occurs
-	go http.ListenAndServeTLS(":" + *tlsPort, *tlsCert, *tlsKey, r)
+	if *useTls == true {
+		go func(tlsPort *string, tlsCert *string, tlsKey *string) {
+			log.Println("Starting secure server on port " + *tlsPort)
+			log.Fatal(http.ListenAndServeTLS(":" + *tlsPort, *tlsCert, *tlsKey, r))
+		}(tlsPort, tlsCert, tlsKey)
+	}
 
-	http.ListenAndServe(":" + *port, r)
+	log.Println("Starting server on port " + *port)
+	log.Fatal(http.ListenAndServe(":" + *port, r))
 }
 
 func showFiles(w http.ResponseWriter, r *http.Request) {
