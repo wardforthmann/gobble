@@ -24,3 +24,6 @@ _testmain.go
 *.test
 *.prof
 *.iml
+
+#the linux executable which doesnt have a file extension
+gobble
