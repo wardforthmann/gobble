@@ -16,11 +16,16 @@ import (
 	"strconv"
 )
 
+var (
+	usernameFlag string
+	passwordFlag string
+)
+
 func main() {
 	r := chi.NewRouter()
 
-	r.Get("/", showFiles)
-	r.Get("/*", showFiles)
+	r.With(basicAuth).Get("/", showFiles)
+	r.With(basicAuth).Get("/*", showFiles)
 	r.With(statusCodeHandler).Post("/", handlePost)
 
 	port := flag.String("port", "80", "Specifies the port to listen for incoming connections")
@@ -28,6 +33,8 @@ func main() {
 	tlsPort := flag.String("tlsPort", "443", "Specifies the port to listen for incoming secure connections")
 	tlsCert := flag.String("tlsCert", "cert.pem", "Specifies the path to the x509 certificate")
 	tlsKey := flag.String("tlsKey", "key.pem", "Specifies the path to the private key corresponding to the x509 certificate")
+	usernameFlag = flag.String("username", "", "Specify a username to protect againt unauthorized reading of your requests")
+	passwordFlag = flag.String("password", "", "Specify a password to protect against unauthorized reading of your requests")
 
 	homeDir := flag.String("dir", "public", "Specifies the root directory which all directories and requests will be stored under")
 	flag.Parse()
@@ -139,5 +146,24 @@ func statusCodeHandler(next http.Handler) http.Handler {
 			}
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+func basicAuth(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, password, _ := r.BasicAuth()
+
+		//If no auth was set up then we just serve the page
+		if usernameFlag == "" || passwordFlag == "" {
+			h.ServeHTTP(w, r)
+		}
+
+		//Auth was configured so we check to make sure the user has the correct credentials
+		if username != usernameFlag || password != passwordFlag {
+			w.Header().Add("WWW-Authenticate", `Basic realm="Restricted"`)
+			http.Error(w, "Not Authorized", http.StatusUnauthorized)
+			return
+		}
+		h.ServeHTTP(w, r)
 	})
 }
