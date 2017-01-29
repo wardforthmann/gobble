@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	usernameFlag string
-	passwordFlag string
+	usernameFlag *string
+	passwordFlag *string
 )
 
 func main() {
@@ -154,12 +154,13 @@ func basicAuth(h http.Handler) http.Handler {
 		username, password, _ := r.BasicAuth()
 
 		//If no auth was set up then we just serve the page
-		if usernameFlag == "" || passwordFlag == "" {
+		if *usernameFlag == "" || *passwordFlag == "" {
 			h.ServeHTTP(w, r)
+			return
 		}
 
 		//Auth was configured so we check to make sure the user has the correct credentials
-		if username != usernameFlag || password != passwordFlag {
+		if username != *usernameFlag || password != *passwordFlag {
 			w.Header().Add("WWW-Authenticate", `Basic realm="Restricted"`)
 			http.Error(w, "Not Authorized", http.StatusUnauthorized)
 			return
