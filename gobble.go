@@ -27,6 +27,7 @@ func main() {
 	r.With(basicAuth).Get("/", showFiles)
 	r.With(basicAuth).Get("/*", showFiles)
 	r.With(statusCodeHandler).Post("/", handlePost)
+	r.With(statusCodeHandler).Post("/*", handlePost)
 
 	port := flag.String("port", "80", "Specifies the port to listen for incoming connections")
 	useTls := flag.Bool("tls", false, "Tells gobble to listen for secure connections (ie. https)")
