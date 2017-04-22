@@ -6,11 +6,11 @@ Gobble is a tool intended to help test any application that makes http POST requ
  share it with the world.
  
  
-###Usage
+### Usage
 The current functionality is pretty simple. Simply POST any message to root of the gobble server. It will take your
  request and store it to disk. You can then look up this request by navigating to its location on the gobble server.
  
-####Submitting requests
+#### Submitting requests
  Point your POST request at the root of the gobble server. The request will have its headers and body written to disk 
  under the specified home directory. To ease navigation, the request will be written to a sub directory corresponding
  to the date that the request was received. Gobble will return a string with the path that your request was stored at.
@@ -22,13 +22,13 @@ The current functionality is pretty simple. Simply POST any message to root of t
  dir             | Override the name of the directory your request is written to. This can be used to group requests in a single location
  status_code     | Force the http status code on the response. Useful for testing error conditions
  
-####Retrieving requests
+#### Retrieving requests
  To view stored POST requests navigate a web browser to the location the gobble server is running. It will display a list
  of available directories. You will find your store requests inside these directories. Click on the link corresponding to
  your request and the request will be returned with its headers and body.
  
  
-####Command line args
+#### Command line args
 There are several command line arguments available when running gobble:
 
  ```text
@@ -46,6 +46,6 @@ There are several command line arguments available when running gobble:
     	Specifies the port to listen for incoming secure connections (default "443")
 ```
 
-####Dependencies
+#### Dependencies
 Gobble only depends on a single library named chi. It is currently vendored for your convenience but you can find the 
 original repo [here](https://github.com/pressly/chi).
