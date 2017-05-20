@@ -1,19 +1,20 @@
 package main
 
 import (
-	"github.com/pressly/chi"
+	"bufio"
+	"flag"
+	"fmt"
+	"html/template"
+	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
-	"bufio"
-	"fmt"
-	"strings"
-	"io"
-	"time"
-	"html/template"
-	"io/ioutil"
-	"flag"
-	"log"
 	"strconv"
+	"strings"
+	"time"
+
+	"github.com/pressly/chi"
 )
 
 var (
@@ -127,7 +128,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 
 	//Write headers to file
 	for k, v := range r.Header {
-		fmt.Fprintln(writer, k + ":", strings.Join(v, ","))
+		fmt.Fprintln(writer, k+":", strings.Join(v, ","))
 	}
 
 	fmt.Fprintln(writer)
