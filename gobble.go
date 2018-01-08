@@ -126,6 +126,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	writer := bufio.NewWriter(fo)
 	defer writer.Flush()
 
+	fmt.Fprintln(writer, "POST ", r.RequestURI)
 	//Write headers to file
 	for k, v := range r.Header {
 		fmt.Fprintln(writer, k+":", strings.Join(v, ","))
