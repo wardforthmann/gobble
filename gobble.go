@@ -98,6 +98,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	dir := r.URL.Query().Get("dir")
 	if dir != "" {
 		//Make sure the requested directory is around
+		dir = dir + "/" + t.Format("2006-01-02")
 		err := os.MkdirAll(dir, 0644)
 		if err != nil {
 			panic("unable to create dir")
