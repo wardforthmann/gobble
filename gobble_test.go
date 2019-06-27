@@ -1,15 +1,15 @@
 package main
 
 import (
-	"testing"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"os"
+	"strings"
+	"testing"
 )
 
 func init() {
-	err := os.MkdirAll("testPublic", 0644)
+	err := os.MkdirAll("testPublic", 0744)
 	if err != nil {
 		panic("unable to create dir")
 	}

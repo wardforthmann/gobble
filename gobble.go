@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -35,27 +36,30 @@ func main() {
 	tlsPort := flag.String("tlsPort", "443", "Specifies the port to listen for incoming secure connections")
 	tlsCert := flag.String("tlsCert", "cert.pem", "Specifies the path to the x509 certificate")
 	tlsKey := flag.String("tlsKey", "key.pem", "Specifies the path to the private key corresponding to the x509 certificate")
-	usernameFlag = flag.String("username", "", "Specify a username to protect againt unauthorized reading of your requests")
+	usernameFlag = flag.String("username", "", "Specify a username to protect against unauthorized reading of your requests")
 	passwordFlag = flag.String("password", "", "Specify a password to protect against unauthorized reading of your requests")
 
 	homeDir := flag.String("dir", "public", "Specifies the root directory which all directories and requests will be stored under")
 	flag.Parse()
 
-	err := os.MkdirAll(*homeDir, 0644)
+	err := os.MkdirAll(*homeDir, 0744)
 	if err != nil {
-		panic("unable to create dir")
+		panic("Unable to create home directory: " + err.Error())
 	}
-	os.Chdir(*homeDir)
+	err = os.Chdir(*homeDir)
+	if err != nil {
+		panic("Unable to switch to home directory: " + err.Error())
+	}
 
 	if *useTls == true {
 		go func(tlsPort *string, tlsCert *string, tlsKey *string) {
 			log.Println("Starting secure server on port " + *tlsPort)
-			log.Fatal(http.ListenAndServeTLS(":" + *tlsPort, *tlsCert, *tlsKey, r))
+			log.Fatal(http.ListenAndServeTLS(":"+*tlsPort, *tlsCert, *tlsKey, r))
 		}(tlsPort, tlsCert, tlsKey)
 	}
 
 	log.Println("Starting server on port " + *port)
-	log.Fatal(http.ListenAndServe(":" + *port, r))
+	log.Fatal(http.ListenAndServe(":"+*port, r))
 }
 
 func showFiles(w http.ResponseWriter, r *http.Request) {
@@ -67,10 +71,13 @@ func showFiles(w http.ResponseWriter, r *http.Request) {
 		{{end}}`))
 
 	path := chi.URLParam(r, "*")
+	//Sanitize the path input and then add the '.' to keep the links relative to the working directory
+	//This is necessary to keep badly maliciously formatted paths from escaping the working directory
+	path = "." + filepath.Clean("/"+path)
 
-	if info, err := os.Stat("./" + path); err == nil {
+	if info, err := os.Stat(path); err == nil {
 		if info.IsDir() {
-			files, err := ioutil.ReadDir("./" + path)
+			files, err := ioutil.ReadDir(path)
 			if err != nil {
 				panic("Unable to read directory")
 			}
@@ -99,14 +106,14 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	if dir != "" {
 		//Make sure the requested directory is around
 		dir = dir + "/" + t.Format("2006-01-02")
-		err := os.MkdirAll(dir, 0644)
+		err := os.MkdirAll(dir, 0744)
 		if err != nil {
 			panic("unable to create dir")
 		}
 	} else {
 		//No directory requested so we give them the default
 		dir = t.Format("2006-01-02")
-		err := os.MkdirAll(dir, 0644)
+		err := os.MkdirAll(dir, 0744)
 		if err != nil {
 			panic("unable to create dir")
 		}
