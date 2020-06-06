@@ -11,4 +11,5 @@ FROM alpine
 COPY --from=build /go/src/gobble/gobble /go/src/gobble/gobble
 WORKDIR /go/src/gobble
 EXPOSE 80
+ENV GIN_MODE=release
 ENTRYPOINT [ "./gobble" ] 
