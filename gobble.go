@@ -31,7 +31,8 @@ func main() {
 	homeDir := flag.String("dir", "public", "Speci	fies the root directory which all directories and requests will be stored under")
 	flag.Parse()
 
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
 
 	if *usernameFlag != "" {
 		r.GET("/*path", gin.BasicAuth(gin.Accounts{*usernameFlag: *passwordFlag}), showFiles)
