@@ -15,32 +15,31 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pressly/chi"
-)
-
-var (
-	usernameFlag *string
-	passwordFlag *string
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	r := chi.NewRouter()
-
-	r.With(basicAuth).Get("/", showFiles)
-	r.With(basicAuth).Get("/*", showFiles)
-	r.With(statusCodeHandler).Post("/", handlePost)
-	r.With(statusCodeHandler).Post("/*", handlePost)
 
 	port := flag.String("port", "80", "Specifies the port to listen for incoming connections")
 	useTls := flag.Bool("tls", false, "Tells gobble to listen for secure connections (ie. https)")
 	tlsPort := flag.String("tlsPort", "443", "Specifies the port to listen for incoming secure connections")
 	tlsCert := flag.String("tlsCert", "cert.pem", "Specifies the path to the x509 certificate")
 	tlsKey := flag.String("tlsKey", "key.pem", "Specifies the path to the private key corresponding to the x509 certificate")
-	usernameFlag = flag.String("username", "", "Specify a username to protect against unauthorized reading of your requests")
-	passwordFlag = flag.String("password", "", "Specify a password to protect against unauthorized reading of your requests")
+	usernameFlag := flag.String("username", "", "Specify a username to protect against unauthorized reading of your requests")
+	passwordFlag := flag.String("password", "", "Specify a password to protect against unauthorized reading of your requests")
 
-	homeDir := flag.String("dir", "public", "Specifies the root directory which all directories and requests will be stored under")
+	homeDir := flag.String("dir", "public", "Speci	fies the root directory which all directories and requests will be stored under")
 	flag.Parse()
+
+	r := gin.Default()
+
+	if *usernameFlag != "" {
+		r.GET("/*path", gin.BasicAuth(gin.Accounts{*usernameFlag: *passwordFlag}), showFiles)
+	} else {
+		r.GET("/*path", showFiles)
+
+	}
+	r.POST("/*path", statusCodeHandler, handlePost)
 
 	err := os.MkdirAll(*homeDir, 0744)
 	if err != nil {
@@ -54,15 +53,15 @@ func main() {
 	if *useTls == true {
 		go func(tlsPort *string, tlsCert *string, tlsKey *string) {
 			log.Println("Starting secure server on port " + *tlsPort)
-			log.Fatal(http.ListenAndServeTLS(":"+*tlsPort, *tlsCert, *tlsKey, r))
+			log.Fatal(r.RunTLS(":"+*tlsPort, *tlsCert, *tlsKey))
 		}(tlsPort, tlsCert, tlsKey)
 	}
 
 	log.Println("Starting server on port " + *port)
-	log.Fatal(http.ListenAndServe(":"+*port, r))
+	log.Fatal(r.Run(":" + *port))
 }
 
-func showFiles(w http.ResponseWriter, r *http.Request) {
+func showFiles(c *gin.Context) {
 
 	t := template.Must(template.New("index").Parse(`{{define "index"}}
 		{{range .Files}}
@@ -70,7 +69,7 @@ func showFiles(w http.ResponseWriter, r *http.Request) {
 		{{end}}
 		{{end}}`))
 
-	path := chi.URLParam(r, "*")
+	path := c.Param("path")
 	//Sanitize the path input and then add the '.' to keep the links relative to the working directory
 	//This is necessary to keep badly maliciously formatted paths from escaping the working directory
 	path = "." + filepath.Clean("/"+path)
@@ -90,19 +89,19 @@ func showFiles(w http.ResponseWriter, r *http.Request) {
 				files,
 			}
 
-			t.Execute(w, templData)
+			t.Execute(c.Writer, templData)
 		} else {
 			f, _ := ioutil.ReadFile(path)
-			w.Write(f)
+			c.Data(http.StatusOK, "text/plain", f)
 		}
 	} else {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 	}
 }
 
-func handlePost(w http.ResponseWriter, r *http.Request) {
+func handlePost(c *gin.Context) {
 	t := time.Now()
-	dir := r.URL.Query().Get("dir")
+	dir := c.Query("dir")
 	if dir != "" {
 		//Make sure the requested directory is around
 		dir = dir + "/" + t.Format("2006-01-02")
@@ -134,48 +133,26 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	writer := bufio.NewWriter(fo)
 	defer writer.Flush()
 
-	fmt.Fprintln(writer, "POST ", r.RequestURI)
+	fmt.Fprintln(writer, "POST ", c.FullPath())
 	//Write headers to file
-	for k, v := range r.Header {
+	for k, v := range c.Request.Header {
 		fmt.Fprintln(writer, k+":", strings.Join(v, ","))
 	}
 
 	fmt.Fprintln(writer)
 	//Write request body to file
-	io.Copy(writer, r.Body)
-	w.Write([]byte(fo.Name()[1:]))
+	io.Copy(writer, c.Request.Body)
+	c.String(http.StatusOK, fo.Name()[1:])
 }
 
-func statusCodeHandler(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Query().Get("status_code") != "" {
-			status, err := strconv.Atoi(r.URL.Query().Get("status_code"))
-			if err == nil {
-				w.WriteHeader(status)
-			} else {
-				log.Println("Invalid number in status_code field")
-			}
+func statusCodeHandler(c *gin.Context) {
+	if c.Query("status_code") != "" {
+		status, err := strconv.Atoi(c.Query("status_code"))
+		if err == nil {
+			c.Status(status)
+		} else {
+			log.Println("Invalid number in status_code field")
 		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-func basicAuth(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, password, _ := r.BasicAuth()
-
-		//If no auth was set up then we just serve the page
-		if *usernameFlag == "" || *passwordFlag == "" {
-			h.ServeHTTP(w, r)
-			return
-		}
-
-		//Auth was configured so we check to make sure the user has the correct credentials
-		if username != *usernameFlag || password != *passwordFlag {
-			w.Header().Add("WWW-Authenticate", `Basic realm="Restricted"`)
-			http.Error(w, "Not Authorized", http.StatusUnauthorized)
-			return
-		}
-		h.ServeHTTP(w, r)
-	})
+	}
+	c.Next()
 }
