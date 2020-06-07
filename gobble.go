@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"html/template"
@@ -92,11 +93,36 @@ func showFiles(c *gin.Context) {
 
 			t.Execute(c.Writer, templData)
 		} else {
-			f, _ := ioutil.ReadFile(path)
-			c.Data(http.StatusOK, "text/plain", f)
+			showFile(c, path)
 		}
 	} else {
 		c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
+	}
+}
+
+// Adds the file to the response. A noHeader query parameter will cause the headers to be stripped
+// prior to adding them to the response.
+func showFile(c *gin.Context, fileName string) {
+	if _, exists := c.GetQuery("noHeader"); exists {
+		fileBytes, _ := ioutil.ReadFile(fileName)
+		splitBytes := bytes.SplitN(fileBytes, []byte("\n\n"), 2)
+
+		scanner := bufio.NewScanner(bytes.NewReader(splitBytes[0]))
+
+		// Fetch the content-type from the headers if it's available and add it to the response
+		contentType := "text/plain"
+		for scanner.Scan() {
+			header := bytes.Split(scanner.Bytes(), []byte(": "))
+			if bytes.Compare(header[0], []byte("Content-Type")) == 0 {
+				contentType = string(header[1])
+				break
+			}
+		}
+
+		c.Data(http.StatusOK, contentType, splitBytes[1])
+	} else {
+		fileBytes, _ := ioutil.ReadFile(fileName)
+		c.Data(http.StatusOK, "text/plain", fileBytes)
 	}
 }
 

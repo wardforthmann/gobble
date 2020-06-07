@@ -27,3 +27,4 @@ _testmain.go
 
 #the linux executable which doesnt have a file extension
 gobble
+public
