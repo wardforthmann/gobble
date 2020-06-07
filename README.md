@@ -26,8 +26,9 @@ The current functionality is pretty simple. Simply POST any message to root of t
  
  Query Parameter | Description 
  :--------------:|:-----------
- dir             | Override the name of the directory your request is written to. This can be used to group requests in a single location
- status_code     | Force the http status code on the response. Useful for testing error conditions
+ dir             | Override the name of the directory your request is written to. This can be used to group requests in a single location.
+ no_header       | Do not return the headers at the top of the response. This will try to set the content-type of the response based on the stored header if possible.
+ status_code     | Force the http status code on the response. Useful for testing error conditions.
  
  An example post would be:
  ```

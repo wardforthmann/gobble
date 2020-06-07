@@ -103,7 +103,7 @@ func showFiles(c *gin.Context) {
 // Adds the file to the response. A noHeader query parameter will cause the headers to be stripped
 // prior to adding them to the response.
 func showFile(c *gin.Context, fileName string) {
-	if _, exists := c.GetQuery("noHeader"); exists {
+	if _, exists := c.GetQuery("no_header"); exists {
 		fileBytes, _ := ioutil.ReadFile(fileName)
 		splitBytes := bytes.SplitN(fileBytes, []byte("\n\n"), 2)
 
