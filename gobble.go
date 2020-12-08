@@ -29,7 +29,7 @@ func main() {
 	usernameFlag := flag.String("username", "", "Specify a username to protect against unauthorized reading of your requests")
 	passwordFlag := flag.String("password", "", "Specify a password to protect against unauthorized reading of your requests")
 
-	homeDir := flag.String("dir", "public", "Speci	fies the root directory which all directories and requests will be stored under")
+	homeDir := flag.String("dir", "public", "Specify the root directory which all directories and requests will be stored under")
 	flag.Parse()
 
 	r := gin.New()
