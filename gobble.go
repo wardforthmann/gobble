@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -52,7 +52,7 @@ func main() {
 		panic("Unable to switch to home directory: " + err.Error())
 	}
 
-	if *useTls == true {
+	if *useTls {
 		go func(tlsPort *string, tlsCert *string, tlsKey *string) {
 			log.Println("Starting secure server on port " + *tlsPort)
 			log.Fatal(r.RunTLS(":"+*tlsPort, *tlsCert, *tlsKey))
@@ -67,7 +67,7 @@ func showFiles(c *gin.Context) {
 
 	t := template.Must(template.New("index").Parse(`{{define "index"}}
 		{{range .Files}}
-		<a href="{{$.Path}}/{{.Name}}">{{.Name}}</a><br/>
+		<a href="{{$.Info.Path}}/{{.Name}}">{{.Name}}</a><br/>
 		{{end}}
 		{{end}}`))
 
@@ -78,14 +78,14 @@ func showFiles(c *gin.Context) {
 
 	if info, err := os.Stat(path); err == nil {
 		if info.IsDir() {
-			files, err := ioutil.ReadDir(path)
+			files, err := os.ReadDir(path)
 			if err != nil {
 				panic("Unable to read directory")
 			}
 
 			templData := struct {
 				Path  string
-				Files []os.FileInfo
+				Files []fs.DirEntry
 			}{
 				info.Name(),
 				files,
@@ -104,7 +104,7 @@ func showFiles(c *gin.Context) {
 // prior to adding them to the response.
 func showFile(c *gin.Context, fileName string) {
 	if _, exists := c.GetQuery("no_header"); exists {
-		fileBytes, _ := ioutil.ReadFile(fileName)
+		fileBytes, _ := os.ReadFile(fileName)
 		splitBytes := bytes.SplitN(fileBytes, []byte("\n\n"), 2)
 
 		scanner := bufio.NewScanner(bytes.NewReader(splitBytes[0]))
@@ -113,7 +113,7 @@ func showFile(c *gin.Context, fileName string) {
 		contentType := "text/plain"
 		for scanner.Scan() {
 			header := bytes.Split(scanner.Bytes(), []byte(": "))
-			if bytes.Compare(header[0], []byte("Content-Type")) == 0 {
+			if bytes.Equal(header[0], []byte("Content-Type")) {
 				contentType = string(header[1])
 				break
 			}
@@ -121,7 +121,7 @@ func showFile(c *gin.Context, fileName string) {
 
 		c.Data(http.StatusOK, contentType, splitBytes[1])
 	} else {
-		fileBytes, _ := ioutil.ReadFile(fileName)
+		fileBytes, _ := os.ReadFile(fileName)
 		c.Data(http.StatusOK, "text/plain", fileBytes)
 	}
 }
