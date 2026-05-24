@@ -60,5 +60,4 @@ There are several command line arguments available when running gobble:
 ```
 
 #### Dependencies
-Gobble only depends on a single library named chi. It is currently vendored for your convenience but you can find the 
-original repo [here](https://github.com/pressly/chi).
+Gobble only depends on the std libraries. No external dependencies are required.
