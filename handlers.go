@@ -14,8 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func showFiles(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +24,7 @@ func showFiles(w http.ResponseWriter, r *http.Request) {
 	{{end}}
 	{{end}}`))
 
-	path := chi.URLParam(r, "*")
+	path := r.PathValue("path")
 
 	//Sanitize the path input and then add the '.' to keep the links relative to the working directory
 	//This is necessary to keep badly maliciously formatted paths from escaping the working directory
@@ -143,4 +141,16 @@ func statusCodeHandler() func(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func recoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Printf("panic recovered: %v", err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
 }

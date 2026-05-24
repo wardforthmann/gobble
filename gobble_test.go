@@ -54,7 +54,7 @@ func TestHandlePostWithStatusCode(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	//Chi would normally handle the statusCodeHandler function with its "with" function but we arent going through chi here
-	handler := statusCodeHandler(http.HandlerFunc(handlePost))
+	handler := statusCodeHandler()(http.HandlerFunc(handlePost))
 
 	handler.ServeHTTP(rr, req)
 	if rr.Code != http.StatusTeapot {

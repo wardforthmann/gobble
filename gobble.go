@@ -7,9 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -32,8 +29,7 @@ func run(w io.Writer, args []string) error {
 	homeDir := flag.String("dir", "public", "Specify the root directory which all directories and requests will be stored under")
 	flag.Parse()
 
-	r := chi.NewRouter()
-	r.Use(middleware.Recoverer)
+	r := http.NewServeMux()
 
 	creds := make(map[string]string)
 	if *usernameFlag != "" {
@@ -54,11 +50,11 @@ func run(w io.Writer, args []string) error {
 	if *useTls {
 		go func(tlsPort *string, tlsCert *string, tlsKey *string) {
 			log.Println("Starting secure server on port " + *tlsPort)
-			log.Fatal(http.ListenAndServeTLS(":"+*tlsPort, *tlsCert, *tlsKey, r))
+			log.Fatal(http.ListenAndServeTLS(":"+*tlsPort, *tlsCert, *tlsKey, recoveryMiddleware(r)))
 		}(tlsPort, tlsCert, tlsKey)
 	}
 
 	log.Println("Starting server on port " + *port)
-	log.Fatal(http.ListenAndServe(":"+*port, r))
+	log.Fatal(http.ListenAndServe(":"+*port, recoveryMiddleware(r)))
 	return nil
 }

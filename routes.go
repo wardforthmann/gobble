@@ -1,20 +1,35 @@
 package main
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"net/http"
 )
 
 func addRoutes(
-	r *chi.Mux,
+	r *http.ServeMux,
 	creds map[string]string,
 ) {
-
+	var showFilesHandler http.Handler = http.HandlerFunc(showFiles)
 	if len(creds) > 0 {
-		r.With(middleware.BasicAuth("", creds)).Get("/*", showFiles)
-	} else {
-		r.Get("/*", showFiles)
+		showFilesHandler = basicAuthMiddleware(creds)(showFilesHandler)
 	}
+	r.Handle("GET /", showFilesHandler)
+	r.Handle("GET /{path...}", showFilesHandler)
 
-	r.With(statusCodeHandler()).Post("/*", handlePost)
+	postHandler := statusCodeHandler()(http.HandlerFunc(handlePost))
+	r.Handle("POST /", postHandler)
+	r.Handle("POST /{path...}", postHandler)
+}
+
+func basicAuthMiddleware(creds map[string]string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user, pass, ok := r.BasicAuth()
+			if !ok || creds[user] != pass {
+				w.Header().Set("WWW-Authenticate", `Basic realm=""`)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
