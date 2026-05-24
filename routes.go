@@ -12,11 +12,9 @@ func addRoutes(
 	if len(creds) > 0 {
 		showFilesHandler = basicAuthMiddleware(creds)(showFilesHandler)
 	}
-	r.Handle("GET /", showFilesHandler)
 	r.Handle("GET /{path...}", showFilesHandler)
 
 	postHandler := statusCodeHandler()(http.HandlerFunc(handlePost))
-	r.Handle("POST /", postHandler)
 	r.Handle("POST /{path...}", postHandler)
 }
 
